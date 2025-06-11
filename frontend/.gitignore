@@ -21,3 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ignore all .env files
+**/.env
+
+# ignore any JSON in a keys folder
+**/keys/*.json
