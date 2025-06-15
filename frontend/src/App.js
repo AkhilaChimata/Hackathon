@@ -8,6 +8,7 @@ import SearchBar from "./components/SearchBar";
 import SnippetList from "./components/SnippetList";
 import ExplanationPanel from "./components/ExplanationPanel";
 import Footer from "./components/Footer";
+import Typography from "@mui/material/Typography";
 
 function App() {
   const [results, setResults] = useState([]);
@@ -15,6 +16,7 @@ function App() {
   const [aiExplanation, setAiExplanation] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   // Called by SearchBar
   const handleSearch = (newResults, loading) => {
@@ -27,10 +29,22 @@ function App() {
   };
 
   // Called by SnippetCard via onExplain
-  const handleExplain = async (id, _, mode) => {
-    const snippet = results.find((r) => r._id === id);
+  const handleExplain = async (snippet, mode) => {
     setSelectedSnippet(snippet);
-    setAiExplanation("");
+    setLoadingExplanation(true);
+    setAiExplanation(""); // Clear previous explanation
+    try {
+      const response = await fetch("http://localhost:8000/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: snippet._id, mode }),
+      });
+      const data = await response.json();
+      setAiExplanation(data.explanation || "No explanation found.");
+    } catch (e) {
+      setAiExplanation("Failed to get explanation.");
+    }
+    setLoadingExplanation(false);
   };
 
   const handleClose = () => {
@@ -61,11 +75,21 @@ function App() {
         <ExplanationPanel
           snippet={selectedSnippet}
           aiText={aiExplanation}
+          open={!!selectedSnippet}
+          loading={loadingExplanation}
           onClose={handleClose}
         />
       )}
 
       <Footer />
+
+      <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
+        {/* You can add a mascot image here if you want */}
+        <Typography variant="h5" sx={{ fontWeight: 500, color: '#7c43bd' }}>
+          Welcome to EduStory!
+        </Typography>
+        
+      </Box>
     </Box>
   );
 }

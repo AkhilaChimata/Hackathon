@@ -29,8 +29,11 @@ export default function SnippetList({ results, onExplain, isSearching }) {
           key={snip._id}
           snippet={snip}
           onExplain={onExplain}
+          loading={false} // No per-snippet loading, handled globally
+          mode={null} // No per-snippet mode, handled globally
         />
       ))}
     </Box>
   );
 }
+

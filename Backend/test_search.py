@@ -1,21 +1,18 @@
 # test_search.py
 
-from dotenv import load_dotenv
-import os
-from urllib.parse import quote_plus
 from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 import certifi
+from urllib.parse import quote_plus
 
-# 1) Load our .env
+# Load environment variables
 load_dotenv()
-
-# 2) Read Mongo creds from env
 user   = os.getenv("MONGO_USER")
 passwd = os.getenv("MONGO_PASS")
-host   = os.getenv("MONGO_HOST")    # e.g. cluster0.t6p9qr9.mongodb.net
+host   = os.getenv("MONGO_HOST")
 dbname = "ai_tutor"
 
-# 3) Percent-encode and build the full URI
 user_enc   = quote_plus(user)
 passwd_enc = quote_plus(passwd)
 MONGODB_URI = (
@@ -23,13 +20,16 @@ MONGODB_URI = (
     "?retryWrites=true&w=majority&tls=true"
 )
 
-# 4) Connect with explicit CA bundle for Atlas TLS
-client = MongoClient(
-    MONGODB_URI,
-    tlsCAFile=certifi.where(),
-    serverSelectionTimeoutMS=20000
-)
+client = MongoClient(MONGODB_URI, tlsCAFile=certifi.where())
 db = client[dbname]
+
+# Update all documents: add a 'text' field if missing
+result = db.concepts.update_many(
+    {"text": {"$exists": False}},
+    {"$set": {"text": "No description yet."}}
+)
+
+print(f"Updated {result.modified_count} documents.")
 
 # Debug your URI wiring
 print("DEBUG: MONGO_URI ok? ", MONGODB_URI.startswith("mongodb+srv://"))

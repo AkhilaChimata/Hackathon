@@ -1,5 +1,5 @@
 // SnippetCard.jsx  
-import React, { useState } from "react";
+import React from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardActions from "@mui/material/CardActions";
@@ -7,74 +7,40 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
-import ExplanationPanel from "./ExplanationPanel";
 
-export default function SnippetCard({ snippet }) {
-  const [mode, setMode] = useState(null);
-  const [aiText, setAiText] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleExplain = async (chosenMode) => {
-    setMode(chosenMode);
-    setLoading(true);
-    setAiText("");
-    try {
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/explain`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: snippet._id, mode: chosenMode }),
-        }
-      );
-      const { explanation } = await res.json();
-      setAiText(explanation);
-    } catch (err) {
-      console.error(err);
-      alert("Explanation failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function SnippetCard({ snippet, onExplain, loading, mode }) {
   return (
-    <>
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="h6">{snippet.title}</Typography>
-          <Typography variant="body2">
-            {snippet.text.slice(0, 120)}…
-          </Typography>
-        </CardContent>
-        <CardActions>
-          <Button
-            size="small"
-            startIcon={<PlayArrowIcon />}
-            onClick={() => handleExplain("story")}
-            disabled={loading}
-          >
-            {loading && mode === "story"
-              ? "Thinking…"
-              : "Explain as Story"}
-          </Button>
-          <Button
-            size="small"
-            startIcon={<MenuBookIcon />}
-            onClick={() => handleExplain("example")}
-            disabled={loading}
-          >
-            {loading && mode === "example"
-              ? "Thinking…"
-              : "Show Example"}
-          </Button>
-        </CardActions>
-      </Card>
-
-      <ExplanationPanel
-        snippet={snippet}
-        aiText={aiText}
-        onClose={() => setAiText("")}
-      />
-    </>
+    <Card variant="outlined" sx={{ borderRadius: 3, boxShadow: 2, borderColor: '#b39ddb', transition: '0.2s', '&:hover': { boxShadow: 6, borderColor: '#7c43bd' } }}>
+      <CardContent>
+        <Typography variant="h6" sx={{ color: '#7c43bd', fontWeight: 600 }}>{snippet.title}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {snippet.text.slice(0, 120)}…
+        </Typography>
+      </CardContent>
+      <CardActions>
+        <Button
+          size="small"
+          startIcon={<PlayArrowIcon />}
+          onClick={() => onExplain(snippet, "story")}
+          disabled={loading && mode === "story"}
+          sx={{ color: '#fff', background: '#b39ddb', '&:hover': { background: '#7c43bd' } }}
+        >
+          {loading && mode === "story"
+            ? "Thinking…"
+            : "Explain as Story"}
+        </Button>
+        <Button
+          size="small"
+          startIcon={<MenuBookIcon />}
+          onClick={() => onExplain(snippet, "example")}
+          disabled={loading && mode === "example"}
+          sx={{ color: '#fff', background: '#ede7f6', '&:hover': { background: '#b39ddb', color: '#fff' } }}
+        >
+          {loading && mode === "example"
+            ? "Thinking…"
+            : "Show Example"}
+        </Button>
+      </CardActions>
+    </Card>
   );
 }

@@ -1,44 +1,43 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from dotenv import load_dotenv
-import os
-from urllib.parse import quote_plus
 from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 import certifi
+from urllib.parse import quote_plus
+from bson import ObjectId, errors as bson_errors
 import vertexai
-from vertexai.preview.language_models import TextEmbeddingModel
+from vertexai.generative_models import GenerativeModel
 
-# ——— Load env & creds ———
+# Load environment variables
 load_dotenv()
-# Mongo connection pieces
 user   = os.getenv("MONGO_USER")
 passwd = os.getenv("MONGO_PASS")
 host   = os.getenv("MONGO_HOST")
 dbname = "ai_tutor"
 
-# Build and encode URI
 user_enc   = quote_plus(user)
 passwd_enc = quote_plus(passwd)
-MONGO_URI = (
+MONGODB_URI = (
     f"mongodb+srv://{user_enc}:{passwd_enc}@{host}/{dbname}"
     "?retryWrites=true&w=majority&tls=true"
 )
 
-# Initialize Mongo client
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+client = MongoClient(MONGODB_URI, tlsCAFile=certifi.where())
 db = client[dbname]
 
-# Point Vertex AI at your service account
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GCP_SA_KEY_PATH")
-PROJECT_ID = "edustory-hackathon"
-LOCATION   = "us-central1"
-
-# ——— FastAPI setup ———
 app = FastAPI()
 
-# Request models
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class TextRequest(BaseModel):
     text: str
 
@@ -46,64 +45,72 @@ class ExplainRequest(BaseModel):
     id: str
     mode: str  # "story" or "example"
 
-# Helper to embed text
-def get_embedding(text: str):
-    vertexai.init(project=PROJECT_ID, location=LOCATION)
-    model = TextEmbeddingModel.from_pretrained("text-embedding-005")
-    return model.get_embeddings([text])[0].values
-
-# ——— Endpoints ———
-
-@app.post("/embed")
-def embed(req: TextRequest):
-    try:
-        vec = get_embedding(req.text)
-        return {"embedding": vec}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/search")
 def search(q: str, k: int = 5):
-    # 1) embed the query
-    vec = get_embedding(q)
-
-    # 2) run vector search
-    pipeline = [
-        {
-            "$search": {
-                "index": "EduStory",
-                "knn": {
-                    "path": "embedding",
-                    "vector": vec,
-                    "k": k
-                }
-            }
-        },
-        { "$project": { "title":1, "text":1, "_id":1 } },
-        { "$limit": k }
-    ]
     try:
+        pipeline = [
+            {
+                "$search": {
+                    "index": "EduStory",
+                    "text": {
+                        "query": q,
+                        "path": ["title", "text"]
+                    }
+                }
+            },
+            {"$project": {"title": 1, "text": 1, "_id": 1}},
+            {"$limit": k}
+        ]
         docs = list(db.concepts.aggregate(pipeline))
+        # Convert ObjectId to string
+        for doc in docs:
+            doc["_id"] = str(doc["_id"])
         return {"results": docs}
     except Exception as e:
+        print("SEARCH ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+# Vertex AI setup (reuse from embed_text_vertexai.py)
+PROJECT_ID = "edustory-hackathon"
+LOCATION = "us-central1"
+GCP_SA_KEY_PATH = os.getenv("GCP_SA_KEY_PATH")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = GCP_SA_KEY_PATH
+
+def generate_explanation_llm(title, text, mode):
+    vertexai.init(project=PROJECT_ID, location=LOCATION)
+    model = GenerativeModel("gemini-2.0-flash-001")  # or "gemini-2.0-flash-lite-001"
+    if mode == "story":
+        prompt = (
+            f"Explain the following computer science concept as a story for a beginner:\n\n"
+            f"Title: {title}\n"
+            f"Description: {text}\n"
+        )
+    else:
+        prompt = (
+            f"Give a simple, concrete example for the following computer science concept:\n\n"
+            f"Title: {title}\n"
+            f"Description: {text}\n"
+        )
+    response = model.generate_content(prompt)
+    return response.text.strip()
+
 @app.post("/explain")
-def explain(req: ExplainRequest):
-    # 1) fetch the snippet
-    doc = db.concepts.find_one({"_id": req.id})
+async def explain(req: ExplainRequest):
+    try:
+        oid = ObjectId(req.id)
+    except bson_errors.InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid snippet ID")
+    doc = db.concepts.find_one({"_id": oid})
     if not doc:
         raise HTTPException(status_code=404, detail="Snippet not found")
 
-    # 2) choose prompt
-    prompt = (
-        f"Explain the following content as a story:\n\n{doc['text']}"
-        if req.mode=="story"
-        else f"Give a concrete example for this concept:\n\n{doc['text']}"
-    )
+    title = doc.get("title", "")
+    text = doc.get("text", "")
 
-    # 3) call Vertex AI chat
-    vertexai.init(project=PROJECT_ID, location=LOCATION)
-    chat = vertexai.preview.language_models.ChatModel.from_pretrained("chat-bison@001")
-    response = chat.predict(prompt)
-    return {"explanation": response.text}
+    try:
+        explanation = generate_explanation_llm(title, text, req.mode)
+    except Exception as e:
+        print("LLM ERROR:", e)
+        raise HTTPException(status_code=500, detail="LLM generation failed")
+
+    return {"explanation": explanation}

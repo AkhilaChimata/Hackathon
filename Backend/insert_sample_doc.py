@@ -27,3 +27,5 @@ document = {
 # Insert the document
 collection.insert_one(document)
 print("✅ Document inserted successfully!")
+
+py fetch_snippets.py
