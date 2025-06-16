@@ -7,10 +7,26 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
 
-export default function SnippetCard({ snippet, onExplain, loading, mode }) {
+export default function SnippetCard({ snippet, onExplain, loading, mode, onDismiss }) {
+  const [visible, setVisible] = React.useState(true);
+  if (!visible) return null;
   return (
-    <Card variant="outlined" sx={{ borderRadius: 3, boxShadow: 2, borderColor: '#b39ddb', transition: '0.2s', '&:hover': { boxShadow: 6, borderColor: '#7c43bd' } }}>
+    <Card variant="outlined" sx={{ borderRadius: 3, boxShadow: 2, borderColor: '#b39ddb', transition: '0.2s', '&:hover': { boxShadow: 6, borderColor: '#7c43bd' }, position: 'relative' }}>
+      {/* Dismiss button */}
+      <IconButton
+        aria-label="dismiss"
+        size="small"
+        onClick={() => {
+          setVisible(false);
+          if (onDismiss) onDismiss(snippet);
+        }}
+        sx={{ position: 'absolute', top: 8, right: 8, color: '#b39ddb' }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
       <CardContent>
         <Typography variant="h6" sx={{ color: '#7c43bd', fontWeight: 600 }}>{snippet.title}</Typography>
         <Typography variant="body2" color="text.secondary">
@@ -44,3 +60,4 @@ export default function SnippetCard({ snippet, onExplain, loading, mode }) {
     </Card>
   );
 }
+

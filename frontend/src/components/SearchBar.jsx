@@ -17,6 +17,7 @@ export default function SearchBar({ onSearch, loading }) {
       );
       const { results } = await res.json();
       onSearch(results, false);
+      setQuery(""); // Clear the search bar after successful search
     } catch (err) {
       console.error(err);
       alert("Search failed");
@@ -24,45 +25,50 @@ export default function SearchBar({ onSearch, loading }) {
     }
   };
 
+  // Add a wrapper div with flex styles to center the search bar
   return (
-    <Paper
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        p: "2px 16px",
-        display: "flex",
-        alignItems: "center",
-        borderRadius: "32px",
-        width: "100%",
-        maxWidth: 700,
-        boxShadow: '0 4px 24px 0 rgba(124,67,189,0.10)',
-        mb: 4,
-        background: 'linear-gradient(90deg, #ede7f6 0%, #fff 100%)',
-        border: '2px solid #b39ddb',
-        transition: 'box-shadow 0.3s',
-        '&:focus-within': {
-          boxShadow: '0 6px 32px 0 rgba(124,67,189,0.18)',
-          borderColor: '#7c43bd',
-        },
-      }}
-      elevation={0}
-    >
-      <SearchIcon sx={{ color: "#7c43bd", mr: 1, fontSize: 32 }} />
-      <InputBase
-        sx={{ ml: 1, flex: 1, fontSize: 20, fontWeight: 500, color: '#7c43bd', fontFamily: 'Nunito, Arial, sans-serif' }}
-        placeholder="Ask your question..."
-        inputProps={{ "aria-label": "ask your question" }}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        disabled={loading}
-      />
-      <IconButton component="label" aria-label="upload doc" sx={{ color: '#7c43bd', ml: 1, '&:hover': { color: '#fff', background: '#b39ddb' } }}>
-        <UploadFileIcon />
-        <input type="file" hidden onChange={() => {}} />
-      </IconButton>
-      <IconButton type="submit" aria-label="search" sx={{ color: '#fff', background: '#b39ddb', ml: 1, '&:hover': { background: '#7c43bd' }, transition: 'background 0.2s' }} disabled={loading}>
-        <SearchIcon />
-      </IconButton>
-    </Paper>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }}>
+      <div style={{ width: '100%', maxWidth: '700px' }}>
+        <Paper
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: "2px 16px",
+            display: "flex",
+            alignItems: "center",
+            borderRadius: "32px",
+            width: "100%",
+            maxWidth: 700,
+            boxShadow: '0 4px 24px 0 rgba(124,67,189,0.10)',
+            mb: 4,
+            background: 'linear-gradient(90deg, #ede7f6 0%, #fff 100%)',
+            border: '2px solid #b39ddb',
+            transition: 'box-shadow 0.3s',
+            '&:focus-within': {
+              boxShadow: '0 6px 32px 0 rgba(124,67,189,0.18)',
+              borderColor: '#7c43bd',
+            },
+          }}
+          elevation={0}
+        >
+          <SearchIcon sx={{ color: "#7c43bd", mr: 1, fontSize: 32 }} />
+          <InputBase
+            sx={{ ml: 1, flex: 1, fontSize: 20, fontWeight: 500, color: '#7c43bd', fontFamily: 'Nunito, Arial, sans-serif' }}
+            placeholder="Ask your question..."
+            inputProps={{ "aria-label": "ask your question" }}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            disabled={loading}
+          />
+          <IconButton component="label" aria-label="upload doc" sx={{ color: '#7c43bd', ml: 1, '&:hover': { color: '#fff', background: '#b39ddb' } }}>
+            <UploadFileIcon />
+            <input type="file" hidden onChange={() => {}} />
+          </IconButton>
+          <IconButton type="submit" aria-label="search" sx={{ color: '#fff', background: '#b39ddb', ml: 1, '&:hover': { background: '#7c43bd' }, transition: 'background 0.2s' }} disabled={loading}>
+            <SearchIcon />
+          </IconButton>
+        </Paper>
+      </div>
+    </div>
   );
 }

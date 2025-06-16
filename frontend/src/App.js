@@ -56,7 +56,16 @@ function App() {
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header />
 
+      {/* Welcome and tagline above search bar */}
       <Container sx={{ mt: 4, flex: 1 }}>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Typography variant="h3" sx={{ color: "#5e35b1", fontWeight: 700, letterSpacing: 1, mb: 1 }}>
+            Welcome to EduStory
+          </Typography>
+          <Typography variant="h6" sx={{ color: "#5e35b1", fontWeight: 400, letterSpacing: 0.5 }}>
+            Learn through Storytelling.
+          </Typography>
+        </Box>
         {searchError && (
           <Alert severity="error" onClose={() => setSearchError(null)} sx={{ mb: 2 }}>
             {searchError}
@@ -85,9 +94,7 @@ function App() {
 
       <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
         {/* You can add a mascot image here if you want */}
-        <Typography variant="h5" sx={{ fontWeight: 500, color: '#7c43bd' }}>
-          Welcome to EduStory!
-        </Typography>
+        
         
       </Box>
     </Box>
