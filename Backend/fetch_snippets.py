@@ -1,38 +1,33 @@
-import requests, json, time
+import json
+import requests
+import time
 
+# Load topics from cs_topics.json
 with open("cs_topics.json", "r", encoding="utf-8") as f:
-    titles = json.load(f)
+    topics = json.load(f)
 
-# Drop any with colons, just in case
-titles = [t for t in titles if ":" not in t]
-
-print(f"DEBUG: Will attempt to fetch intros for these titles:\n{titles}\n")
-
-API_URL = "https://en.wikipedia.org/w/api.php"
 snippets = []
 
-for title in titles:
-    print(f"\n--- FETCHING: {title} ---")
-    params = {
-        "action": "query",
-        "format": "json",
-        "prop": "extracts",
-        "exintro": True,
-        "explaintext": True,
-        "titles": title,
-    }
-    resp = requests.get(API_URL, params=params).json()
-    # Print top‐level keys and page dict
-    print("API response keys:", resp.keys())
-    page = next(iter(resp.get("query", {}).get("pages", {}).values()), {})
-    print("PAGE keys:", page.keys())
+for topic in topics:
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic.replace(' ', '_')}"
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            summary = data.get("extract", "No summary found.")
+        else:
+            summary = "No summary found."
+    except Exception as e:
+        summary = f"Error fetching summary: {e}"
+    snippets.append({
+        "title": topic,
+        "text": summary
+    })
+    print(f"Fetched: {topic}")
+    time.sleep(0.5)  # Be polite to Wikipedia
 
-    text = page.get("extract", "").strip()
-    if not text:
-        print(f"⚠️ No extract (or empty) for: '{title}'")
-    else:
-        snippets.append({"title": title, "text": text, "tags": ["wikipedia", "computer-science"]})
+# Save to cs_snippets.json
+with open("cs_snippets.json", "w", encoding="utf-8") as f:
+    json.dump(snippets, f, ensure_ascii=False, indent=2)
 
-    time.sleep(0.1)
-
-print(f"\nSummary: fetched {len(snippets)} snippets.")
+print("✅ Wikipedia summaries saved to cs_snippets.json")

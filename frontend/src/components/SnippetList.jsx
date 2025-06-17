@@ -1,3 +1,4 @@
+// SnippetList.jsx  
 import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -5,7 +6,6 @@ import CircularProgress from "@mui/material/CircularProgress";
 import SnippetCard from "./SnippetCard";
 
 export default function SnippetList({ results, onExplain, isSearching }) {
-  // 1. If searching, show spinner
   if (isSearching) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -13,8 +13,6 @@ export default function SnippetList({ results, onExplain, isSearching }) {
       </Box>
     );
   }
-
-  // 2. If no results, show placeholder
   if (!results || results.length === 0) {
     return (
       <Box sx={{ textAlign: "center", mt: 2 }}>
@@ -24,13 +22,18 @@ export default function SnippetList({ results, onExplain, isSearching }) {
       </Box>
     );
   }
-
-  // 3. Otherwise, list snippet cards
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {results.map((snip) => (
-        <SnippetCard key={snip._id} snippet={snip} onExplain={onExplain} />
+        <SnippetCard
+          key={snip._id}
+          snippet={snip}
+          onExplain={onExplain}
+          loading={false} // No per-snippet loading, handled globally
+          mode={null} // No per-snippet mode, handled globally
+        />
       ))}
     </Box>
   );
 }
+

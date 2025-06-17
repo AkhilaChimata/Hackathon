@@ -1,15 +1,12 @@
+// index.js :contentReference[oaicite:1]{index=1}
 import React from "react";
-import ReactDOM from "react-dom/client"; // Use the /client version
+import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ThemeProvider, createTheme } from "@mui/material";
-import "./index.css"; // your optional global CSS reset
+import "./index.css";
 
-// Create a theme (customize colors here if you like)
-const theme = createTheme({
-  // palette: { primary: { main: "#1976d2" }, secondary: { main: "#f50057" } },
-});
+const theme = createTheme({});
 
-// Create root and render app
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <ThemeProvider theme={theme}>

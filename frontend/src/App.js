@@ -1,84 +1,78 @@
+// App.js :contentReference[oaicite:0]{index=0}
 import React, { useState } from "react";
 import Container from "@mui/material/Container";
+import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
-
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import SnippetList from "./components/SnippetList";
 import ExplanationPanel from "./components/ExplanationPanel";
 import Footer from "./components/Footer";
-
-import { searchConcepts, explainText } from "./api";
+import Typography from "@mui/material/Typography";
 
 function App() {
-  // ─── State Hooks ─────────────────────────────────────────────────────────
-  const [results, setResults] = useState([]);            // array of snippet objects
-  const [selectedSnippet, setSelectedSnippet] = useState(null); // snippet to explain
-  const [aiExplanation, setAiExplanation] = useState("");      // AI-generated text
-  const [isSearching, setIsSearching] = useState(false);       // search loading
-  const [searchError, setSearchError] = useState(null);        // search error message
+  const [results, setResults] = useState([]);
+  const [selectedSnippet, setSelectedSnippet] = useState(null);
+  const [aiExplanation, setAiExplanation] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────
-  const handleSearch = async (query) => {
-    setIsSearching(true);
+  // Called by SearchBar
+  const handleSearch = (newResults, loading) => {
+    setIsSearching(loading);
     setSearchError(null);
-    setResults([]);            // Clear previous results
-    setSelectedSnippet(null);  // Close any open explanation
-    setAiExplanation("");
-
-    try {
-      const res = await searchConcepts(query);
-      // Expect res.data.results to be an array of { _id, title, text }
-      setResults(res.data.results || []);
-    } catch (err) {
-      console.error("Search error:", err);
-      setSearchError("Error fetching results. Please try again.");
-    } finally {
-      setIsSearching(false);
+    if (!loading) {
+      setResults(newResults);
+      setSelectedSnippet(null);
     }
   };
 
-  const handleExplain = async (id, text, mode) => {
-    // Find the snippet object in results by its ID
-    const snippet = results.find((r) => r._id === id);
+  // Called by SnippetCard via onExplain
+  const handleExplain = async (snippet, mode) => {
     setSelectedSnippet(snippet);
-    setAiExplanation(""); // Clear previous explanation text
-
+    setLoadingExplanation(true);
+    setAiExplanation(""); // Clear previous explanation
     try {
-      const res = await explainText(text, mode);
-      setAiExplanation(res.data.ai_text || "No explanation returned.");
-    } catch (err) {
-      console.error("Explain error:", err);
-      setAiExplanation("Error generating explanation. Please try again.");
+      const response = await fetch("http://localhost:8000/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: snippet._id, mode }),
+      });
+      const data = await response.json();
+      setAiExplanation(data.explanation || "No explanation found.");
+    } catch (e) {
+      setAiExplanation("Failed to get explanation.");
     }
+    setLoadingExplanation(false);
   };
 
-  const handleCloseExplanation = () => {
+  const handleClose = () => {
     setSelectedSnippet(null);
     setAiExplanation("");
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="App">
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Header />
 
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        {/* 1. Show search error if any */}
+      {/* Welcome and tagline above search bar */}
+      <Container sx={{ mt: 4, flex: 1 }}>
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Typography variant="h3" sx={{ color: "#5e35b1", fontWeight: 700, letterSpacing: 1, mb: 1 }}>
+            Welcome to EduStory
+          </Typography>
+          <Typography variant="h6" sx={{ color: "#5e35b1", fontWeight: 400, letterSpacing: 0.5 }}>
+            Learn through Storytelling.
+          </Typography>
+        </Box>
         {searchError && (
-          <Alert
-            severity="error"
-            onClose={() => setSearchError(null)}
-            sx={{ mb: 2 }}
-          >
+          <Alert severity="error" onClose={() => setSearchError(null)} sx={{ mb: 2 }}>
             {searchError}
           </Alert>
         )}
 
-        {/* 2. Search bar */}
         <SearchBar onSearch={handleSearch} loading={isSearching} />
-
-        {/* 3. List of snippet results */}
         <SnippetList
           results={results}
           onExplain={handleExplain}
@@ -86,17 +80,24 @@ function App() {
         />
       </Container>
 
-      {/* 4. Explanation Panel (modal) */}
       {selectedSnippet && (
         <ExplanationPanel
           snippet={selectedSnippet}
           aiText={aiExplanation}
-          onClose={handleCloseExplanation}
+          open={!!selectedSnippet}
+          loading={loadingExplanation}
+          onClose={handleClose}
         />
       )}
 
       <Footer />
-    </div>
+
+      <Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
+        {/* You can add a mascot image here if you want */}
+        
+        
+      </Box>
+    </Box>
   );
 }
 
