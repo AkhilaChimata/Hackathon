@@ -29,7 +29,7 @@ passwd = os.getenv("MONGO_PASS")
 host   = os.getenv("MONGO_HOST")
 dbname = "ai_tutor"
 
-user_enc   = quote_plus(user)
+user_enc   = quote_plus(str(user))
 passwd_enc = quote_plus(passwd)
 MONGODB_URI = (
     f"mongodb+srv://{user_enc}:{passwd_enc}@{host}/{dbname}"
