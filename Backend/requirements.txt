@@ -3,3 +3,4 @@ uvicorn
 google-cloud-storage
 pymongo
 dnspython
+python-dotenv
