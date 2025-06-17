@@ -1,9 +1,14 @@
 import axios from "axios";
 
+// Instead of
+// const API_URL = "http://localhost:8000";
+// Use your backend's public URL, e.g.:
+const API_URL = "https://your-backend-service.onrender.com";
+
 // Because we set "proxy" in package.json to http://localhost:8000,
 // any request from React to "/search" or "/explain" goes to your Python backend.
 const apiClient = axios.create({
-  baseURL: "",
+  baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
 });
 
