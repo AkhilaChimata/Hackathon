@@ -17,10 +17,7 @@ dbname   = "ai_tutor"
 user_enc   = quote_plus(user)
 passwd_enc = quote_plus(passwd)
 
-MONGODB_URI = (
-    f"mongodb+srv://{user_enc}:{passwd_enc}@{host}/{dbname}"
-    "?retryWrites=true&w=majority"
-)
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb+srv://your_mongo_host")
 
 # 3) (Optional) verify
 print("DEBUG: MONGO_URI ok?", MONGODB_URI.startswith("mongodb+srv://"))

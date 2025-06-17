@@ -21,20 +21,30 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import base64
 from io import BytesIO
 from gcs_utils import upload_video_to_gcs
+import sys
 
-# Load environment variables
-load_dotenv()
-user   = os.getenv("MONGO_USER")
-passwd = os.getenv("MONGO_PASS")
-host   = os.getenv("MONGO_HOST")
+# Only load .env locally
+if os.getenv("RENDER") != "true":
+    load_dotenv()
+
+# Sanity check for required env vars
+for var in ("MONGO_USER", "MONGO_PASS", "MONGO_HOST", "GCP_SA_KEY_PATH"):
+    if not os.getenv(var):
+        print(f"Missing env var: {var}", file=sys.stderr)
+        sys.exit(1)
+
 dbname = "ai_tutor"
-
-user_enc   = quote_plus(user)
-passwd_enc = quote_plus(passwd)
-MONGODB_URI = (
-    f"mongodb+srv://{user_enc}:{passwd_enc}@{host}/{dbname}"
-    "?retryWrites=true&w=majority&tls=true"
-)
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    user   = os.getenv("MONGO_USER")
+    passwd = os.getenv("MONGO_PASS")
+    host   = os.getenv("MONGO_HOST")
+    user_enc   = quote_plus(str(user))
+    passwd_enc = quote_plus(str(passwd))
+    MONGODB_URI = (
+        f"mongodb+srv://{user_enc}:{passwd_enc}@{host}/{dbname}"
+        "?retryWrites=true&w=majority&tls=true"
+    )
 
 client = MongoClient(MONGODB_URI, tlsCAFile=certifi.where())
 db = client[dbname]

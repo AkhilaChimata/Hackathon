@@ -1,3 +1,7 @@
 fastapi
 uvicorn
 google-cloud-storage
+pymongo
+dnspython
+python-dotenv
+google-cloud-aiplatform
